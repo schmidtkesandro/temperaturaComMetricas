@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultar Clima por CEP</title>
+</head>
+<body>
+    <h1>Consultar Clima por CEP</h1>
+    <form id="cepForm">
+        <label for="cep">CEP:</label>
+        <input type="text" id="cep" name="cep" pattern="\d{8}" required>
+        <button type="submit">Consultar</button>
+    </form>
+    <div id="result"></div>
+    <script>
+        document.getElementById('cepForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const cep = document.getElementById('cep').value;
+            fetch('/cep', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ cep: cep })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('result').innerText = data.error;
+                } else {
+                    document.getElementById('result').innerText = `
+                        Cidade: ${data.city}\n
+                        Temperatura (Celsius): ${data.temp_C}\n
+                        Temperatura (Fahrenheit): ${data.temp_F}\n
+                        Temperatura (Kelvin): ${data.temp_K}
+                    `;
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    </script>
+</body>
+</html>

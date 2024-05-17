@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+  servicea:
+    build: ./servicea
+    ports:
+      - "8080:8080"
+    depends_on:
+      - serviceb
+
+  serviceb:
+    build: ./serviceb
+    ports:
+      - "8081:8081"
+    environment:
+      - WEATHER_API_KEY=a5a63b17c16446cbdc24451240205
