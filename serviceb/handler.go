@@ -5,8 +5,34 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
+
+var (
+	requestDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "http_request_duration_seconds",
+			Help:    "Duration of HTTP requests.",
+			Buckets: prometheus.DefBuckets,
+		},
+		[]string{"path"},
+	)
+)
+
+func init() {
+	prometheus.MustRegister(requestDuration)
+}
+
+func recordMetrics(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		timer := prometheus.NewTimer(requestDuration.WithLabelValues(r.URL.Path))
+		defer timer.ObserveDuration()
+		next.ServeHTTP(w, r)
+	})
+}
 
 type CEPRequest struct {
 	CEP string `json:"cep"`
@@ -98,9 +124,10 @@ func getLocation(cep string) (string, error) {
 
 func getTemperature(city string) (float64, error) {
 	apiKey := os.Getenv("WEATHER_API_KEY")
-	fmt.Println(apiKey)
-	apiKey = "aa5a63b17c16446cbdc24451240205"
-	url := fmt.Sprintf("http://api.weatherapi.com/v1/current.json?key=%s&q=%s&aqi=no", apiKey, city)
+
+	escapedCity := url.QueryEscape(city)
+	fmt.Println(escapedCity)
+	url := fmt.Sprintf("http://api.weatherapi.com/v1/current.json?key=%s&q=%s&aqi=no", apiKey, escapedCity)
 
 	resp, err := http.Get(url)
 	if err != nil {

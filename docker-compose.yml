@@ -7,10 +7,49 @@ services:
       - "8080:8080"
     depends_on:
       - serviceb
+      - otelcol
 
   serviceb:
     build: ./serviceb
     ports:
       - "8081:8081"
+    depends_on:
+      - otelcol
     environment:
-      - WEATHER_API_KEY=a5a63b17c16446cbdc24451240205
+      - WEATHER_API_KEY=aa5a63b17c16446cbdc24451240205
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    depends_on:
+      - servicea
+      - serviceb
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+  zipkin:
+    image: openzipkin/zipkin
+    ports:
+      - "9411:9411"
+
+  otelcol:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: ["--config=/etc/otel-collector-config.yml"]
+    volumes:
+      - ./otel-collector-config.yml:/etc/otel-collector-config.yml
+    ports:
+      - "4317:4317"  # OpenTelemetry gRPC receiver
+      - "55681:55681"  # OpenTelemetry HTTP receiver
+
+volumes:
+  grafana-storage:

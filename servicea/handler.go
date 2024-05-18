@@ -6,7 +6,32 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
+
+var (
+	requestDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "http_request_duration_seconds",
+			Help:    "Duration of HTTP requests.",
+			Buckets: prometheus.DefBuckets,
+		},
+		[]string{"path"},
+	)
+)
+
+func init() {
+	prometheus.MustRegister(requestDuration)
+}
+
+func recordMetrics(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		timer := prometheus.NewTimer(requestDuration.WithLabelValues(r.URL.Path))
+		defer timer.ObserveDuration()
+		next.ServeHTTP(w, r)
+	})
+}
 
 type CEPRequest struct {
 	CEP string `json:"cep"`
