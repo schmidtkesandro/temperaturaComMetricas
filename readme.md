@@ -34,15 +34,15 @@ curl -X POST <http://localhost:8080/cep> -H "Content-Type: application/json" -d 
 ### Exemplos de Uso no Browser
 
 - **Busca por CEP:**
-  - localhost:8080/
+  - <http://localhost:8080/>
 
 - **BPara ver as métricas:**
-  - localhost:8080/metrics
+  - <http://localhost:8080/metrics>
 
 ### OpenTelemetry e Zipkin
 
-O projeto inclui tracing distribuído com OpenTelemetry e Zipkin. Para visualizar os traces, acesse o Zipkin em `http://localhost:9411`.
+O projeto inclui tracing distribuído com OpenTelemetry e Zipkin. Para visualizar os traces, acesse o Zipkin em <http://localhost:9411>.
 
 ### Grafana e Prometheus
 
-Para visualizar o grafana em `http://localhost:3000` e o Prometheus em `http://localhost:9090`
+Para visualizar o grafana em <http://localhost:3000> e o Prometheus em <http://localhost:9090>, Usuário e senha no Prometheus é admin/admin.
