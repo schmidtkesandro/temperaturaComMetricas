@@ -29,7 +29,7 @@ Este projeto consiste em dois serviços que se comunicam para fornecer a tempera
   - Método: `POST`
   - Body: `{ "cep": "29902555" }`
 
-curl -X POST <http://localhost:8080/cep> -H "Content-Type: application/json" -d '{"cep": "29902555"}'
+curl -X POST http://localhost:8080/cep -H "Content-Type: application/json" -d '{"cep": "29902555"}'
 
 ### Exemplos de Uso no Browser
 

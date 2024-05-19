@@ -1,19 +1,24 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	otlptracegrpc "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/sdk/resource"
-	"go.opentelemetry.io/otel/sdk/trace"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.8.0"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 )
+
+var tracer trace.Tracer
 
 func initTracer(serviceName string) func() {
 	ctx := context.Background()
@@ -28,14 +33,15 @@ func initTracer(serviceName string) func() {
 		log.Fatalf("failed to create trace exporter: %v", err)
 	}
 
-	tracerProvider := trace.NewTracerProvider(
-		trace.WithBatcher(exporter),
-		trace.WithResource(resource.NewWithAttributes(
+	tracerProvider := sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(exporter),
+		sdktrace.WithResource(resource.NewWithAttributes(
 			semconv.SchemaURL,
 			semconv.ServiceNameKey.String(serviceName),
 		)),
 	)
 	otel.SetTracerProvider(tracerProvider)
+	tracer = otel.Tracer(serviceName)
 
 	return func() {
 		if err := tracerProvider.Shutdown(ctx); err != nil {
@@ -45,7 +51,6 @@ func initTracer(serviceName string) func() {
 }
 
 func main() {
-	// Service A
 	shutdown := initTracer("serviceA")
 	defer shutdown()
 
@@ -59,6 +64,58 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
 
+func handleCEP(w http.ResponseWriter, r *http.Request) {
+	ctx, span := tracer.Start(r.Context(), "handleCEP")
+	defer span.End()
+
+	var req struct {
+		CEP string `json:"cep"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+
+	// Inicia um novo span para a chamada ao serviço B
+	_, spanCallServiceB := tracer.Start(ctx, "callServiceB")
+	defer spanCallServiceB.End()
+
+	// Prepare the request body for the service B
+	requestBody, err := json.Marshal(req)
+	if err != nil {
+		http.Error(w, "failed to create request body", http.StatusInternalServerError)
+		return
+	}
+
+	resp, err := http.Post("http://serviceb:8081/cep", "application/json", bytes.NewBuffer(requestBody))
+	if err != nil {
+		http.Error(w, "failed to call service B", http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		http.Error(w, "service B error", resp.StatusCode)
+		return
+	}
+
+	var responseBody map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&responseBody); err != nil {
+		http.Error(w, "failed to read response from service B", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(responseBody)
+}
+
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "index.html")
+}
+
+func recordMetrics(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Record metrics here if necessary
+		next.ServeHTTP(w, r)
+	})
 }
