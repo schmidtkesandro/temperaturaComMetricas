@@ -1,22 +1,27 @@
-FROM golang:1.21-alpine
+# Define a imagem base para o estágio de compilação
+FROM golang:1.21 AS builder
 
-# Instalar git
-RUN apk add --no-cache git
-
+# Define o diretório de trabalho no container
 WORKDIR /app
 
-COPY go.mod ./
-COPY go.sum ./
+# Copia os arquivos de gerenciamento de dependências
+COPY go.mod go.sum ./
+
+# Baixa as dependências
 RUN go mod download
 
-COPY *.go ./
+# Copia os arquivos do código fonte
+COPY . .
 
+# Compila o aplicativo
+RUN CGO_ENABLED=0 GOOS=linux go build -o serviceb
 
-RUN go build -o /serviceb
+# Define a imagem base para o estágio de execução
+FROM gcr.io/distroless/base-debian10
 
-#FROM gcr.io/distroless/base-debian10
-#COPY --from=builder /serviceb /serviceb
+# Copia o executável do estágio de compilação
+COPY --from=builder /app/serviceb /
 
-EXPOSE 8081
+# Define o comando para executar o aplicativo
+CMD ["/serviceb"]
 
-ENTRYPOINT ["/serviceb"]
