@@ -1,7 +1,6 @@
 module github.com/schmidtkesandro/temperaturaComMetricas
 
 go 1.21
-
 require (
 	github.com/gorilla/mux v1.8.1
 	go.opentelemetry.io/otel v1.26.0

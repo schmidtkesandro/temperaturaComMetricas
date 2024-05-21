@@ -9,7 +9,6 @@ require (
 	go.opentelemetry.io/otel/sdk v1.26.0
 	google.golang.org/grpc v1.63.2
 )
-
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
