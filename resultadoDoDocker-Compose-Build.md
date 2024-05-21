@@ -1,5 +1,5 @@
  docker-compose up --build
-WARN[0000] /Users/sandroluisschmidtke/Pos-Go/temperaturaComMetricas/docker-compose.yml: `version` is obsolete 
+WARN[0000] /Users/sandroluisschmidtke/Pos-Go/temperaturaComMetricas/docker-compose.yml: `version` is obsolete
 [+] Building 1.4s (23/23) FINISHED       docker:desktop-linux
  => [serviceb internal] load build definition from Dock  0.0s
  => => transferring dockerfile: 332B                     0.0s
@@ -29,7 +29,7 @@ WARN[0000] /Users/sandroluisschmidtke/Pos-Go/temperaturaComMetricas/docker-compo
  => CACHED [servicea 4/9] COPY go.mod ./                 0.0s
  => CACHED [servicea 5/9] COPY go.sum ./                 0.0s
  => CACHED [servicea 6/9] RUN go mod download            0.0s
- => CACHED [servicea 7/9] COPY *.go ./                   0.0s
+ => CACHED [servicea 7/9] COPY*.go ./                   0.0s
  => CACHED [servicea 8/9] COPY index.html ./             0.0s
  => CACHED [servicea 9/9] RUN go build -o /servicea      0.0s
  => [servicea] exporting to image                        0.0s
@@ -37,22 +37,22 @@ WARN[0000] /Users/sandroluisschmidtke/Pos-Go/temperaturaComMetricas/docker-compo
  => => writing image sha256:52a45d27ffd015dc2ca9d191230  0.0s
  => => naming to docker.io/library/temperaturacommetric  0.0s
 [+] Running 5/3
-[+] Running 7/6eraturacommetricas_default         Created0.0s 
- ✔ Network temperaturacommetricas_default         Created0.0s 
- ✔ Container temperaturacommetricas-otelcol-1     Created0.1s 
- ✔ Container temperaturacommetricas-zipkin-1      Created0.1s 
- ✔ Container temperaturacommetricas-serviceb-1    Created0.0s 
- ✔ Container temperaturacommetricas-servicea-1    Created0.0s 
- ✔ Container temperaturacommetricas-prometheus-1  Created0.0s 
- ✔ Container temperaturacommetricas-grafana-1     Created0.0s 
+[+] Running 7/6eraturacommetricas_default         Created0.0s
+ ✔ Network temperaturacommetricas_default         Created0.0s
+ ✔ Container temperaturacommetricas-otelcol-1     Created0.1s
+ ✔ Container temperaturacommetricas-zipkin-1      Created0.1s
+ ✔ Container temperaturacommetricas-serviceb-1    Created0.0s
+ ✔ Container temperaturacommetricas-servicea-1    Created0.0s
+ ✔ Container temperaturacommetricas-prometheus-1  Created0.0s
+ ✔ Container temperaturacommetricas-grafana-1     Created0.0s
 Attaching to grafana-1, otelcol-1, prometheus-1, servicea-1, serviceb-1, zipkin-1
 otelcol-1     | 2024-05-21T03:12:40.659Z        info    service@v0.100.0/service.go:102       Setting up own telemetry...
 otelcol-1     | 2024-05-21T03:12:40.659Z        info    service@v0.100.0/telemetry.go:103     Serving metrics {"address": ":8888", "level": "Normal"}
 otelcol-1     | 2024-05-21T03:12:40.660Z        info    service@v0.100.0/service.go:169       Starting otelcol-contrib...  {"Version": "0.100.0", "NumCPU": 10}
 otelcol-1     | 2024-05-21T03:12:40.660Z        info    extensions/extensions.go:34   Starting extensions...
-otelcol-1     | 2024-05-21T03:12:40.660Z        warn    internal@v0.100.0/warning.go:42       Using the 0.0.0.0 address exposes this server to every network interface, which may facilitate Denial of Service attacks. Enable the feature gate to change the default and remove this warning.  {"kind": "receiver", "name": "otlp", "data_type": "traces", "documentation": "https://github.com/open-telemetry/opentelemetry-collector/blob/main/docs/security-best-practices.md#safeguards-against-denial-of-service-attacks", "feature gate ID": "component.UseLocalHostAsDefaultHost"}
+otelcol-1     | 2024-05-21T03:12:40.660Z        warn    internal@v0.100.0/warning.go:42       Using the 0.0.0.0 address exposes this server to every network interface, which may facilitate Denial of Service attacks. Enable the feature gate to change the default and remove this warning.  {"kind": "receiver", "name": "otlp", "data_type": "traces", "documentation": "<https://github.com/open-telemetry/opentelemetry-collector/blob/main/docs/security-best-practices.md#safeguards-against-denial-of-service-attacks>", "feature gate ID": "component.UseLocalHostAsDefaultHost"}
 otelcol-1     | 2024-05-21T03:12:40.660Z        info    otlpreceiver@v0.100.0/otlp.go:102     Starting GRPC server    {"kind": "receiver", "name": "otlp", "data_type": "traces", "endpoint": "0.0.0.0:4317"}
-otelcol-1     | 2024-05-21T03:12:40.660Z        warn    internal@v0.100.0/warning.go:42       Using the 0.0.0.0 address exposes this server to every network interface, which may facilitate Denial of Service attacks. Enable the feature gate to change the default and remove this warning.  {"kind": "receiver", "name": "otlp", "data_type": "traces", "documentation": "https://github.com/open-telemetry/opentelemetry-collector/blob/main/docs/security-best-practices.md#safeguards-against-denial-of-service-attacks", "feature gate ID": "component.UseLocalHostAsDefaultHost"}
+otelcol-1     | 2024-05-21T03:12:40.660Z        warn    internal@v0.100.0/warning.go:42       Using the 0.0.0.0 address exposes this server to every network interface, which may facilitate Denial of Service attacks. Enable the feature gate to change the default and remove this warning.  {"kind": "receiver", "name": "otlp", "data_type": "traces", "documentation": "<https://github.com/open-telemetry/opentelemetry-collector/blob/main/docs/security-best-practices.md#safeguards-against-denial-of-service-attacks>", "feature gate ID": "component.UseLocalHostAsDefaultHost"}
 otelcol-1     | 2024-05-21T03:12:40.660Z        info    otlpreceiver@v0.100.0/otlp.go:152     Starting HTTP server    {"kind": "receiver", "name": "otlp", "data_type": "traces", "endpoint": "0.0.0.0:4318"}
 otelcol-1     | 2024-05-21T03:12:40.661Z        info    service@v0.100.0/service.go:195       Everything is ready. Begin running and processing data.
 otelcol-1     | 2024-05-21T03:12:40.661Z        warn    localhostgate/featuregate.go:63       The default endpoints for all servers in components will change to use localhost instead of 0.0.0.0 in a future version. Use the feature gate to preview the new default. {"feature gate ID": "component.UseLocalHostAsDefaultHost"}
@@ -121,7 +121,7 @@ grafana-1     | logger=ngalert.scheduler t=2024-05-21T03:12:41.403567303Z level=
 grafana-1     | logger=ticker t=2024-05-21T03:12:41.403629178Z level=info msg=starting first_tick=2024-05-21T03:12:50Z
 grafana-1     | logger=provisioning.dashboard t=2024-05-21T03:12:41.439916886Z level=info msg="starting to provision dashboards"
 grafana-1     | logger=provisioning.dashboard t=2024-05-21T03:12:41.439941469Z level=info msg="finished to provision dashboards"
-zipkin-1      | 
+zipkin-1      |
 zipkin-1      |                   oo
 zipkin-1      |                  oooo
 zipkin-1      |                 oooooo
@@ -141,34 +141,35 @@ zipkin-1      |   ooooooooooooo oo  oo ooooooooooooo
 zipkin-1      |       oooooooooooo  oooooooooooo
 zipkin-1      |           oooooooo  oooooooo
 zipkin-1      |               oooo  oooo
-zipkin-1      | 
-zipkin-1      |      ________ ____  _  _____ _   _
-zipkin-1      |     |__  /_ _|  _ \| |/ /_ _| \ | |
-zipkin-1      |       / / | || |_) | ' / | ||  \| |
-zipkin-1      |      / /_ | ||  __/| . \ | || |\  |
-zipkin-1      |     |____|___|_|   |_|\_\___|_| \_|
-zipkin-1      | 
+zipkin-1      |
+zipkin-1      |      ________ ____  _______   _
+zipkin-1      |     |__/_ *|  _ \| |/ /* *| \ | |
+zipkin-1      |       / / | || |*) | ' / | ||  \| |
+zipkin-1      |      / /_| ||__/| . \ | || |\  |
+zipkin-1      |     |*__*|__*|*|   |*|\_\___|*| \_|
+zipkin-1      |
 zipkin-1      | :: version 3.3.0 :: commit dfd8ee2 ::
-zipkin-1      | 
+zipkin-1      |
 grafana-1     | logger=grafana.update.checker t=2024-05-21T03:12:41.695469553Z level=info msg="Update check succeeded" duration=293.184125ms
 grafana-1     | logger=plugins.update.checker t=2024-05-21T03:12:41.710317928Z level=info msg="Update check succeeded" duration=307.325875ms
 grafana-1     | logger=grafana-apiserver t=2024-05-21T03:12:41.753331428Z level=info msg="Adding GroupVersion playlist.grafana.app v0alpha1 to ResourceManager"
 grafana-1     | logger=grafana-apiserver t=2024-05-21T03:12:41.754791136Z level=info msg="Adding GroupVersion featuretoggle.grafana.app v0alpha1 to ResourceManager"
-zipkin-1      | 2024-05-21T03:12:42.392Z  INFO [/] 1 --- [oss-http-*:9411] c.l.a.s.Server                           : Serving HTTP at /[0:0:0:0:0:0:0:0%0]:9411 - http://127.0.0.1:9411/
+zipkin-1      | 2024-05-21T03:12:42.392Z  INFO [/] 1 --- [oss-http-*:9411] c.l.a.s.Server                           : Serving HTTP at /[0:0:0:0:0:0:0:0%0]:9411 - <http://127.0.0.1:9411/>
 
 ## Execução dos serviços e resultado
-curl -X POST http://localhost:8080/cep -H "Content-Type: application/json" -d '{"cep": "70766060"}'
+
+curl -X POST <http://localhost:8080/cep> -H "Content-Type: application/json" -d '{"cep": "70766060"}'
 
 {"city":"Brasília","temp_C":22,"temp_F":71.6,"temp_K":295}
 
-
 ## docker-compose down
-WARN[0000] /Users/sandroluisschmidtke/Pos-Go/temperaturaComMetricas/docker-compose.yml: `version` is obsolete 
+
+WARN[0000] /Users/sandroluisschmidtke/Pos-Go/temperaturaComMetricas/docker-compose.yml: `version` is obsolete
 [+] Running 7/0
- ✔ Container temperaturacommetricas-zipkin-1      Removed0.0s 
- ✔ Container temperaturacommetricas-grafana-1     Removed0.0s 
- ✔ Container temperaturacommetricas-prometheus-1  Removed0.0s 
- ✔ Container temperaturacommetricas-servicea-1    Removed0.0s 
- ✔ Container temperaturacommetricas-serviceb-1    Removed0.0s 
- ✔ Container temperaturacommetricas-otelcol-1     Removed0.0s 
- ✔ Network temperaturacommetricas_default         Removed0.0s 
+ ✔ Container temperaturacommetricas-zipkin-1      Removed0.0s
+ ✔ Container temperaturacommetricas-grafana-1     Removed0.0s
+ ✔ Container temperaturacommetricas-prometheus-1  Removed0.0s
+ ✔ Container temperaturacommetricas-servicea-1    Removed0.0s
+ ✔ Container temperaturacommetricas-serviceb-1    Removed0.0s
+ ✔ Container temperaturacommetricas-otelcol-1     Removed0.0s
+ ✔ Network temperaturacommetricas_default         Removed0.0s
