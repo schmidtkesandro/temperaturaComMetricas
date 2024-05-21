@@ -11,8 +11,12 @@ RUN go mod download
 
 COPY *.go ./
 
+
 RUN go build -o /serviceb
+
+#FROM gcr.io/distroless/base-debian10
+#COPY --from=builder /serviceb /serviceb
 
 EXPOSE 8081
 
-CMD [ "/serviceb" ]
+ENTRYPOINT ["/serviceb"]

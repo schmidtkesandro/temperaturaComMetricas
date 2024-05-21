@@ -13,6 +13,10 @@ COPY *.go ./
 COPY index.html ./
 RUN go build -o /servicea
 
+#FROM gcr.io/distroless/base-debian10
+#COPY --from=builder /servicea /servicea
+#COPY --from=builder /app/index.html /index.html
+
 EXPOSE 8080
 
-CMD [ "/servicea" ]
+ENTRYPOINT ["/servicea"]
