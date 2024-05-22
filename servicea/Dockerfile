@@ -12,6 +12,7 @@ RUN go mod download
 
 # Copia os arquivos do código fonte
 COPY . .
+COPY *.go ./
 
 # Compila o aplicativo
 RUN CGO_ENABLED=0 GOOS=linux go build -o servicea
@@ -21,6 +22,8 @@ FROM gcr.io/distroless/base-debian10
 
 # Copia o executável do estágio de compilação
 COPY --from=builder /app/servicea /
+COPY --from=builder /app/ /
 
+EXPOSE 8080
 # Define o comando para executar o aplicativo
 CMD ["/servicea"]
