@@ -5,8 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"regexp"
 
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -81,7 +83,10 @@ func handleCEP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
-
+	if !isValidCEP(req.CEP) {
+		http.Error(w, "invalid CEP format; must be 8 numeric characters", http.StatusBadRequest)
+		return
+	}
 	cepData := map[string]string{"cep": req.CEP}
 	cepBytes, err := json.Marshal(cepData)
 
@@ -91,28 +96,40 @@ func handleCEP(w http.ResponseWriter, r *http.Request) {
 	}
 	resp, err := makeRequest(ctx, "http://serviceb:8081/cep", cepBytes)
 	if err != nil {
-		http.Error(w, "failed to call service B", http.StatusInternalServerError)
+		http.Error(w, "Failed to call service B: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		http.Error(w, "service B error", resp.StatusCode)
+	fmt.Println("Status de Retorno", resp.StatusCode)
+	// if resp.StatusCode != http.StatusOK {
+	// 	http.Error(w, "service B error", resp.StatusCode)
+	// 	return
+	// }
+	// Read the response body and status code
+	responseBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		http.Error(w, "Failed to read response from service B", http.StatusInternalServerError)
 		return
 	}
 
-	var responseBody map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&responseBody); err != nil {
-		http.Error(w, "failed to read response from service B", http.StatusInternalServerError)
-		return
-	}
+	// Write the status code and response body from service B to the client
+	w.WriteHeader(resp.StatusCode)
+	w.Write(responseBody)
+	// var responseBody map[string]interface{}
+	// if err := json.NewDecoder(resp.Body).Decode(&responseBody); err != nil {
+	// 	http.Error(w, "failed to read response from service B", http.StatusInternalServerError)
+	// 	return
+	// }
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(responseBody)
+	// w.Header().Set("Content-Type", "application/json")
+	// json.NewEncoder(w).Encode(responseBody)
 }
-
+func isValidCEP(cep string) bool {
+	match, _ := regexp.MatchString(`^\d{8}$`, cep)
+	return match
+}
 func makeRequest(ctx context.Context, url string, data []byte) (*http.Response, error) {
-	client := &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
+	client := http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
 	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(data))
 	if err != nil {
 		return nil, err
@@ -122,9 +139,13 @@ func makeRequest(ctx context.Context, url string, data []byte) (*http.Response, 
 	// Explicitly ensure context is propagated
 	propagator := otel.GetTextMapPropagator()
 	propagator.Inject(ctx, propagation.HeaderCarrier(req.Header))
-	fmt.Println("Sending Headers:", req.Header)
+	//fmt.Println("Sending Headers:", req.Header)
 
-	return client.Do(req)
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {

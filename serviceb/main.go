@@ -71,7 +71,7 @@ func main() {
 }
 
 func handleCEP(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Received Headers:", r.Header)
+	//fmt.Println("Received Headers:", r.Header)
 
 	ctx, span := tracer.Start(r.Context(), "HandleCEP")
 	defer span.End()
@@ -87,13 +87,13 @@ func handleCEP(w http.ResponseWriter, r *http.Request) {
 	location, err := getLocation(ctx, req.CEP)
 
 	if err != nil {
-		http.Error(w, "can not find zipcode", http.StatusNotFound)
+		http.Error(w, "CEP not found: "+err.Error(), http.StatusNotFound)
 		return
 	}
 
 	temperature, err := getTemperature(ctx, location)
 	if err != nil {
-		http.Error(w, "failed to get temperature", http.StatusInternalServerError)
+		http.Error(w, "Failed: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -113,11 +113,12 @@ func getLocation(ctx context.Context, cep string) (string, error) {
 	defer spanGetLocation.End()
 
 	resp, err := http.Get(fmt.Sprintf("https://viacep.com.br/ws/%s/json/", cep))
+
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("CEP not found")
 	}
 	defer resp.Body.Close()
-
+	fmt.Println("Status de Retorno CEP", resp.StatusCode)
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("failed to get location")
 	}
@@ -127,8 +128,9 @@ func getLocation(ctx context.Context, cep string) (string, error) {
 	}
 
 	err = json.NewDecoder(resp.Body).Decode(&data)
-	if err != nil {
-		return "", err
+	fmt.Println("err ", err, "localidade ", data.Localidade)
+	if err != nil || data.Localidade == "" {
+		return "", fmt.Errorf("CEP not found")
 	}
 
 	return data.Localidade, nil
@@ -144,13 +146,14 @@ func getTemperature(ctx context.Context, city string) (float64, error) {
 	url := fmt.Sprintf("http://api.weatherapi.com/v1/current.json?key=%s&q=%s&aqi=no", apiKey, escapedCity)
 
 	resp, err := http.Get(url)
+	fmt.Println("Status de Retorno temperatura", resp.StatusCode)
 	if err != nil {
 		return 0, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return 0, fmt.Errorf("failed to get temperature")
+		return 0, fmt.Errorf("failed to get temperature - status %d", resp.StatusCode)
 	}
 
 	var weatherResponse struct {
