@@ -11,8 +11,10 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	otlptracegrpc "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.8.0"
@@ -23,6 +25,8 @@ import (
 var tracer trace.Tracer
 
 func initTracer(serviceName string) func() {
+	otel.SetTextMapPropagator(propagation.TraceContext{})
+
 	ctx := context.Background()
 
 	conn, err := grpc.DialContext(ctx, "otelcol:4317", grpc.WithInsecure())
@@ -53,12 +57,13 @@ func initTracer(serviceName string) func() {
 }
 
 func main() {
-	shutdown := initTracer("serviceB")
-	defer shutdown()
+	shutdownB := initTracer("serviceB")
+	defer shutdownB()
 
 	r := mux.NewRouter()
 	r.Use(recordMetrics)
-	r.HandleFunc("/cep", handleCEP).Methods("POST")
+
+	r.Handle("/cep", otelhttp.NewHandler(http.HandlerFunc(handleCEP), "ReceiveCEP"))
 	r.Handle("/metrics", promhttp.Handler())
 
 	log.Println("Service B is running on port 8081")
@@ -66,7 +71,9 @@ func main() {
 }
 
 func handleCEP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := tracer.Start(r.Context(), "handleCEP")
+	fmt.Println("Received Headers:", r.Header)
+
+	ctx, span := tracer.Start(r.Context(), "HandleCEP")
 	defer span.End()
 
 	var req struct {
@@ -77,19 +84,14 @@ func handleCEP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Inicia um novo span para a busca da localização
-	ctx, spanLocation := tracer.Start(ctx, "getLocation")
 	location, err := getLocation(ctx, req.CEP)
-	spanLocation.End()
+
 	if err != nil {
 		http.Error(w, "can not find zipcode", http.StatusNotFound)
 		return
 	}
 
-	// Inicia um novo span para a busca da temperatura
-	ctx, spanTemperature := tracer.Start(ctx, "getTemperature")
 	temperature, err := getTemperature(ctx, location)
-	spanTemperature.End()
 	if err != nil {
 		http.Error(w, "failed to get temperature", http.StatusInternalServerError)
 		return
@@ -107,8 +109,8 @@ func handleCEP(w http.ResponseWriter, r *http.Request) {
 }
 
 func getLocation(ctx context.Context, cep string) (string, error) {
-	_, span := tracer.Start(ctx, "getLocation")
-	defer span.End()
+	_, spanGetLocation := tracer.Start(ctx, "getLocation")
+	defer spanGetLocation.End()
 
 	resp, err := http.Get(fmt.Sprintf("https://viacep.com.br/ws/%s/json/", cep))
 	if err != nil {
@@ -133,8 +135,8 @@ func getLocation(ctx context.Context, cep string) (string, error) {
 }
 
 func getTemperature(ctx context.Context, city string) (float64, error) {
-	_, span := tracer.Start(ctx, "getTemperature")
-	defer span.End()
+	_, spanGetTemperature := tracer.Start(ctx, "getTemperature")
+	defer spanGetTemperature.End()
 
 	apiKey := os.Getenv("WEATHER_API_KEY")
 	escapedCity := url.QueryEscape(city)

@@ -4,13 +4,16 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	otlptracegrpc "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.8.0"
@@ -21,6 +24,8 @@ import (
 var tracer trace.Tracer
 
 func initTracer(serviceName string) func() {
+	otel.SetTextMapPropagator(propagation.TraceContext{})
+
 	ctx := context.Background()
 
 	conn, err := grpc.DialContext(ctx, "otelcol:4317", grpc.WithInsecure())
@@ -56,16 +61,17 @@ func main() {
 
 	r := mux.NewRouter()
 	r.Use(recordMetrics)
-	r.HandleFunc("/cep", handleCEP).Methods("POST")
+
+	r.Handle("/", otelhttp.NewHandler(http.HandlerFunc(homeHandler), "Index"))
+	r.Handle("/cep", otelhttp.NewHandler(http.HandlerFunc(handleCEP), "GetCEP"))
 	r.Handle("/metrics", promhttp.Handler())
-	r.HandleFunc("/", homeHandler)
 
 	log.Println("Service A is running on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
 
 func handleCEP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := tracer.Start(r.Context(), "handleCEP")
+	ctx, span := tracer.Start(r.Context(), "HandleCEP")
 	defer span.End()
 
 	var req struct {
@@ -76,18 +82,14 @@ func handleCEP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Inicia um novo span para a chamada ao serviço B
-	_, spanCallServiceB := tracer.Start(ctx, "callServiceB")
-	defer spanCallServiceB.End()
+	cepData := map[string]string{"cep": req.CEP}
+	cepBytes, err := json.Marshal(cepData)
 
-	// Prepare the request body for the service B
-	requestBody, err := json.Marshal(req)
 	if err != nil {
-		http.Error(w, "failed to create request body", http.StatusInternalServerError)
+		http.Error(w, "failed to marshal CEP data", http.StatusInternalServerError)
 		return
 	}
-
-	resp, err := http.Post("http://serviceb:8081/cep", "application/json", bytes.NewBuffer(requestBody))
+	resp, err := makeRequest(ctx, "http://serviceb:8081/cep", cepBytes)
 	if err != nil {
 		http.Error(w, "failed to call service B", http.StatusInternalServerError)
 		return
@@ -107,6 +109,22 @@ func handleCEP(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(responseBody)
+}
+
+func makeRequest(ctx context.Context, url string, data []byte) (*http.Response, error) {
+	client := &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(data))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	// Explicitly ensure context is propagated
+	propagator := otel.GetTextMapPropagator()
+	propagator.Inject(ctx, propagation.HeaderCarrier(req.Header))
+	fmt.Println("Sending Headers:", req.Header)
+
+	return client.Do(req)
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
